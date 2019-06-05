@@ -23,3 +23,11 @@ cronguard -name cron.example "command"
 ```
 
 The command is executed with `bash -c`. You can use bash features like pipes.
+
+# Install
+
+Via go:
+
+```
+go get -u github.com/bitsbeats/cronguard
+```
