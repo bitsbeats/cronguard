@@ -10,7 +10,7 @@ steps:
     commands:
       - apk --no-cache add git
       - go mod tidy
-      - go build -o conguard-linux-amd64 .
+      - go build -o cronguard-linux-amd64 .
 
   - name: release
     image: plugins/github-release
