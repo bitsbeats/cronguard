@@ -1,5 +1,8 @@
 # Cronguard
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/bitsbeats/cronguard)](https://goreportcard.com/report/github.com/bitsbeats/cronguard)
+[![Build Status](https://cloud.drone.io/api/badges/bitsbeats/cronguard/status.svg)](https://cloud.drone.io/bitsbeats/cronguard)
+
 Simple wrapper log and handle cron errors.
 
 # Usage
