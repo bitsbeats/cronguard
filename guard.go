@@ -21,7 +21,7 @@ import (
 	"github.com/gofrs/uuid"
 	"golang.org/x/sync/errgroup"
 
-	errLog "github.com/bitsbeats/cronguard/elog"
+	"github.com/bitsbeats/cronguard/errlog"
 )
 
 var (
@@ -57,7 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	elog := errLog.New(!*errFileHideUUID, UUID.String(), errFile)
+	elog := errlog.New(!*errFileHideUUID, UUID.String(), errFile)
 
 	// run
 	ctx, cancel := context.WithCancel(context.Background())

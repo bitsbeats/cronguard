@@ -1,4 +1,4 @@
-package elog
+package errlog
 
 import (
 	"fmt"
