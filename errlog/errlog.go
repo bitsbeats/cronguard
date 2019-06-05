@@ -6,18 +6,21 @@ import (
 )
 
 type (
-	Elog struct {
+	// ErrorLogger for printing messages to the errorlog
+	ErrorLogger struct {
 		showUUID bool
 		uuid     string
 		file     io.Writer
 	}
 )
 
-func New(showUUID bool, uuid string, file io.Writer) *Elog {
-	return &Elog{showUUID, uuid, file}
+// New ErrorLogger instance
+func New(showUUID bool, uuid string, file io.Writer) *ErrorLogger {
+	return &ErrorLogger{showUUID, uuid, file}
 }
 
-func (e *Elog) Printf(msg string, fields ...interface{}) {
+// Printf messages to the errorlog
+func (e *ErrorLogger) Printf(msg string, fields ...interface{}) {
 	if e.showUUID {
 		msg = fmt.Sprintf("%s == %s", e.uuid, msg)
 	}
