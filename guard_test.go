@@ -50,20 +50,20 @@ func cron(t *testing.T, command string, want string) (err error) {
 func TestOutput(t *testing.T) {
 	cases := []tCase{
 		// check exitcodes
-		tCase{"true", ""},
-		tCase{"false", "errors while running cron.test\nexit status 1\nexitcode 1\n"},
-		tCase{"exit 2", "errors while running cron.test\nexit status 2\nexitcode 2\n"},
+		{"true", ""},
+		{"false", "errors while running cron.test\nexit status 1\nexitcode 1\n"},
+		{"exit 2", "errors while running cron.test\nexit status 2\nexitcode 2\n"},
 
 		// check output
-		tCase{"echo fail", "errors while running cron.test\nfail\nbad keyword in command output\nexitcode 0\n"},
-		tCase{"echo failure", "errors while running cron.test\nfailure\nbad keyword in command output\nexitcode 0\n"},
-		tCase{"echo ERR", "errors while running cron.test\nERR\nbad keyword in command output\nexitcode 0\n"},
-		tCase{"echo ERROR", "errors while running cron.test\nERROR\nbad keyword in command output\nexitcode 0\n"},
-		tCase{"echo Crit", "errors while running cron.test\nCrit\nbad keyword in command output\nexitcode 0\n"},
-		tCase{"echo Critical", "errors while running cron.test\nCritical\nbad keyword in command output\nexitcode 0\n"},
+		{"echo fail", "errors while running cron.test\nfail\nbad keyword in command output\nexitcode 0\n"},
+		{"echo failure", "errors while running cron.test\nfailure\nbad keyword in command output\nexitcode 0\n"},
+		{"echo ERR", "errors while running cron.test\nERR\nbad keyword in command output\nexitcode 0\n"},
+		{"echo ERROR", "errors while running cron.test\nERROR\nbad keyword in command output\nexitcode 0\n"},
+		{"echo Crit", "errors while running cron.test\nCrit\nbad keyword in command output\nexitcode 0\n"},
+		{"echo Critical", "errors while running cron.test\nCritical\nbad keyword in command output\nexitcode 0\n"},
 
 		// check err output
-		tCase{"echo Hi there 1>&2", "errors while running cron.test\nHi there\nstderr is not empty\nexitcode 0\n"},
+		{"echo Hi there 1>&2", "errors while running cron.test\nHi there\nstderr is not empty\nexitcode 0\n"},
 	}
 
 	var err error
