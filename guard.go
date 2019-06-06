@@ -26,16 +26,17 @@ import (
 
 var (
 	r               = regexp.MustCompile("(?i)(err|fail|crit)")
-	name            = flag.String("name", "general", "cron name in syslog")
+	name            = flag.String("name", "cron", "cron name in syslog")
 	errFileName     = flag.String("errfile", "/var/log/cronstatus", "error report file")
-	errFileHideUUID = flag.Bool("no-err-uuid", false, "hide uuid in error report file")
+	errFileQuiet    = flag.Bool("errfile-quiet", false, "hide timings in error report file")
+	errFileHideUUID = flag.Bool("errfile-no-uuid", false, "hide uuid in error report file")
 )
 
 func main() {
 	// argparse
 	log.SetFlags(0)
 	flag.Parse()
-	if !strings.HasPrefix(*name, "cron.") {
+	if !strings.HasPrefix(*name, "cron") {
 		prefixed := fmt.Sprintf("cron.%s", *name)
 		name = &prefixed
 	}
