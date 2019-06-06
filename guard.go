@@ -67,7 +67,6 @@ func main() {
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		<-sigs
 		cancel()
-		elog.Printf("cancelled")
 	}()
 	_, _, combined, exitCode, err := run(ctx, command, slog)
 
@@ -77,18 +76,19 @@ func main() {
 	}
 
 	// handle bad exit
-	elog.Printf("errors while running %s\n", *name)
+	mixedlog := io.MultiWriter(elog, slog)
+	fmt.Fprintf(mixedlog, "errors while running %s\n", *name)
 	scanner := bufio.NewScanner(combined)
 	for scanner.Scan() {
 		line := scanner.Text()
-		elog.Printf("%s\n", line)
+		fmt.Fprintf(elog, "%s\n", line)
 	}
-	elog.Printf("%s\n", err)
-	elog.Printf("exitcode %d\n", exitCode)
+	fmt.Fprintf(mixedlog, "%s\n", err)
+	fmt.Fprintf(mixedlog, "exit status %d\n", exitCode)
 
 }
 
-func run(ctx context.Context, command string, logfile io.Writer) (stdout *bytes.Buffer, stderr *bytes.Buffer, combined *bytes.Buffer, exitCode int, err error) {
+func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buffer, stderr *bytes.Buffer, combined *bytes.Buffer, exitCode int, err error) {
 	cmd := exec.CommandContext(ctx, "bash", "-c", command)
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -110,11 +110,12 @@ func run(ctx context.Context, command string, logfile io.Writer) (stdout *bytes.
 	stderr = bytes.NewBuffer(nil)
 	combined = bytes.NewBuffer(nil)
 	lock := sync.Mutex{}
+	w := io.MultiWriter(combined, slog, stdout)
 	errgrp.Go(func() (err error) {
-		return parseLog(&lock, stdoutPipe, combined, logfile, stdout)
+		return parseLog(&lock, stdoutPipe, combined, slog, stdout)
 	})
 	errgrp.Go(func() (err error) {
-		return parseLog(&lock, stderrPipe, combined, logfile, stderr)
+		return parseLog(&lock, stderrPipe, combined, slog, stderr)
 	})
 
 	err = errgrp.Wait()

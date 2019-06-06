@@ -19,10 +19,11 @@ func New(showUUID bool, uuid string, file io.Writer) *ErrorLogger {
 	return &ErrorLogger{showUUID, uuid, file}
 }
 
-// Printf messages to the errorlog
-func (e *ErrorLogger) Printf(msg string, fields ...interface{}) {
+// Add writer to implement io.Writer
+func (e *ErrorLogger) Write(p []byte) (n int, err error) {
 	if e.showUUID {
-		msg = fmt.Sprintf("%s == %s", e.uuid, msg)
+		fmt.Fprintf(e.file, "%s == ", e.uuid)
 	}
-	fmt.Fprintf(e.file, msg, fields...)
+	fmt.Fprintf(e.file, "%s", p)
+	return len(p), nil
 }
