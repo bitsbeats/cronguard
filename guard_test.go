@@ -23,7 +23,8 @@ func cron(t *testing.T, command string, want string) (err error) {
 
 	os.Args = []string{
 		"_",
-		"-no-err-uuid",
+		"-errfile-no-uuid",
+		"-errfile-quiet",
 		"-name", "test",
 		"-errfile", "/tmp/goguardtest",
 		command,
@@ -35,7 +36,7 @@ func cron(t *testing.T, command string, want string) (err error) {
 		return
 	}
 
-	if diff := cmp.Diff(string(got), want); diff != "" {
+	if diff := cmp.Diff(want, string(got)); diff != "" {
 		t.Errorf("mismatch (-want +got):\n%s", diff)
 	}
 
@@ -49,21 +50,21 @@ func cron(t *testing.T, command string, want string) (err error) {
 
 func TestOutput(t *testing.T) {
 	cases := []tCase{
-		// check exitcodes
+		// check exit statuss
 		{"true", ""},
-		{"false", "errors while running cron.test\nexit status 1\nexitcode 1\n"},
-		{"exit 2", "errors while running cron.test\nexit status 2\nexitcode 2\n"},
+		{"false", "errors while running cron.test\nexit status 1\nexit status 1\n"},
+		{"exit 2", "errors while running cron.test\nexit status 2\nexit status 2\n"},
 
 		// check output
-		{"echo fail", "errors while running cron.test\nfail\nbad keyword in command output\nexitcode 0\n"},
-		{"echo failure", "errors while running cron.test\nfailure\nbad keyword in command output\nexitcode 0\n"},
-		{"echo ERR", "errors while running cron.test\nERR\nbad keyword in command output\nexitcode 0\n"},
-		{"echo ERROR", "errors while running cron.test\nERROR\nbad keyword in command output\nexitcode 0\n"},
-		{"echo Crit", "errors while running cron.test\nCrit\nbad keyword in command output\nexitcode 0\n"},
-		{"echo Critical", "errors while running cron.test\nCritical\nbad keyword in command output\nexitcode 0\n"},
+		{"echo fail", "errors while running cron.test\nfail\nbad keyword in command output\nexit status 0\n"},
+		{"echo failure", "errors while running cron.test\nfailure\nbad keyword in command output\nexit status 0\n"},
+		{"echo ERR", "errors while running cron.test\nERR\nbad keyword in command output\nexit status 0\n"},
+		{"echo ERROR", "errors while running cron.test\nERROR\nbad keyword in command output\nexit status 0\n"},
+		{"echo Crit", "errors while running cron.test\nCrit\nbad keyword in command output\nexit status 0\n"},
+		{"echo Critical", "errors while running cron.test\nCritical\nbad keyword in command output\nexit status 0\n"},
 
 		// check err output
-		{"echo Hi there 1>&2", "errors while running cron.test\nHi there\nstderr is not empty\nexitcode 0\n"},
+		{"echo Hi there 1>&2", "errors while running cron.test\nHi there\nstderr is not empty\nexit status 0\n"},
 	}
 
 	var err error
