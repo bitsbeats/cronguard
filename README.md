@@ -10,10 +10,12 @@ Simple wrapper log and handle cron errors.
 ```
   -errfile string
     	error report file (default "/var/log/cronstatus")
-  -name string
-    	cron name in syslog (default "general")
-  -no-err-uuid
+  -errfile-no-uuid
     	hide uuid in error report file
+  -errfile-quiet
+    	hide timings in error report file
+  -name string
+    	cron name in syslog (default "cron")
 ```
 
 Example:
