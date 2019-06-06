@@ -18,7 +18,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/gofrs/uuid"
+	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/bitsbeats/cronguard/errlog"
@@ -45,8 +45,9 @@ func main() {
 	}
 	command := flag.Arg(0)
 
+	UUID := xid.New()
+
 	// open syslog
-	UUID := uuid.Must(uuid.NewV4())
 	slog, err := syslog.New(syslog.LOG_INFO, *name)
 	if err != nil {
 		log.Fatal(err)
