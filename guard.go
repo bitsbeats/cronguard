@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
@@ -113,6 +114,18 @@ func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buf
 	combined = bytes.NewBuffer(nil)
 	lock := sync.Mutex{}
 	w := io.MultiWriter(combined, slog, stdout)
+
+	if ! *errFileQuiet {
+		start := time.Now()
+		fmt.Fprintf(w, "start: %s\n", start.Format(time.RFC3339))
+		fmt.Fprintf(w, "cmd: %s\n", flag.Arg(0))
+		defer func() {
+			end := time.Now()
+			fmt.Fprintf(w, "end: %s\n", end.Format(time.RFC3339))
+			fmt.Fprintf(w, "took: %s\n", end.Sub(start))
+		}()
+	}
+
 	errgrp.Go(func() (err error) {
 		return parseLog(&lock, stdoutPipe, combined, slog, stdout)
 	})
