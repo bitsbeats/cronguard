@@ -48,7 +48,7 @@ func main() {
 	UUID := xid.New()
 
 	// open syslog
-	slog, err := syslog.New(syslog.LOG_CRON, *name)
+	slog, err := syslog.New(syslog.LOG_INFO | syslog.LOG_CRON, *name)
 	if err != nil {
 		log.Fatal(err)
 	}
