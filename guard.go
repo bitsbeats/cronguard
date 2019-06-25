@@ -37,9 +37,8 @@ func main() {
 	// argparse
 	log.SetFlags(0)
 	flag.Parse()
-	if !strings.HasPrefix(*name, "cron") {
-		prefixed := fmt.Sprintf("cron.%s", *name)
-		name = &prefixed
+	if !strings.HasPrefix(*name, "guard") {
+		*name = fmt.Sprintf("guard.%s", *name)
 	}
 	if len(flag.Args()) != 1 {
 		log.Fatal("please supply the cron as a single argument")
@@ -49,7 +48,7 @@ func main() {
 	UUID := xid.New()
 
 	// open syslog
-	slog, err := syslog.New(syslog.LOG_INFO, *name)
+	slog, err := syslog.New(syslog.LOG_CRON, *name)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -52,19 +52,19 @@ func TestOutput(t *testing.T) {
 	cases := []tCase{
 		// check exit statuss
 		{"true", ""},
-		{"false", "errors while running cron.test\nexit status 1\nexit status 1\n"},
-		{"exit 2", "errors while running cron.test\nexit status 2\nexit status 2\n"},
+		{"false", "errors while running guard.test\nexit status 1\nexit status 1\n"},
+		{"exit 2", "errors while running guard.test\nexit status 2\nexit status 2\n"},
 
 		// check output
-		{"echo fail", "errors while running cron.test\nfail\nbad keyword in command output\nexit status 0\n"},
-		{"echo failure", "errors while running cron.test\nfailure\nbad keyword in command output\nexit status 0\n"},
-		{"echo ERR", "errors while running cron.test\nERR\nbad keyword in command output\nexit status 0\n"},
-		{"echo ERROR", "errors while running cron.test\nERROR\nbad keyword in command output\nexit status 0\n"},
-		{"echo Crit", "errors while running cron.test\nCrit\nbad keyword in command output\nexit status 0\n"},
-		{"echo Critical", "errors while running cron.test\nCritical\nbad keyword in command output\nexit status 0\n"},
+		{"echo fail", "errors while running guard.test\nfail\nbad keyword in command output\nexit status 0\n"},
+		{"echo failure", "errors while running guard.test\nfailure\nbad keyword in command output\nexit status 0\n"},
+		{"echo ERR", "errors while running guard.test\nERR\nbad keyword in command output\nexit status 0\n"},
+		{"echo ERROR", "errors while running guard.test\nERROR\nbad keyword in command output\nexit status 0\n"},
+		{"echo Crit", "errors while running guard.test\nCrit\nbad keyword in command output\nexit status 0\n"},
+		{"echo Critical", "errors while running guard.test\nCritical\nbad keyword in command output\nexit status 0\n"},
 
 		// check err output
-		{"echo Hi there 1>&2", "errors while running cron.test\nHi there\nstderr is not empty\nexit status 0\n"},
+		{"echo Hi there 1>&2", "errors while running guard.test\nHi there\nstderr is not empty\nexit status 0\n"},
 	}
 
 	var err error
