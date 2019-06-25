@@ -1,3 +1,8 @@
+# v0.3.1
+
+* fix default cron name
+* fix logging priority
+
 # v0.3.0
 
 * fix logging facility to cron
