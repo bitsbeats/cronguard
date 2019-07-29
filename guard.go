@@ -48,7 +48,7 @@ func main() {
 	UUID := xid.New()
 
 	// open syslog
-	slog, err := syslog.New(syslog.LOG_INFO | syslog.LOG_CRON, *name)
+	slog, err := syslog.New(syslog.LOG_INFO|syslog.LOG_CRON, *name)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buf
 	lock := sync.Mutex{}
 	w := io.MultiWriter(combined, slog, stdout)
 
-	if ! *errFileQuiet {
+	if !*errFileQuiet {
 		start := time.Now()
 		fmt.Fprintf(w, "start: %s\n", start.Format(time.RFC3339))
 		fmt.Fprintf(w, "cmd: %s\n", flag.Arg(0))
