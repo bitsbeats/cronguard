@@ -1,3 +1,7 @@
+# v0.4.0
+
+* [BREAKING] require ascii word boundary on errorstring start
+
 # v0.3.1
 
 * fix default cron name

@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	r               = regexp.MustCompile("(?i)(err|fail|crit)")
+	r               = regexp.MustCompile(`(?im)\b(err|fail|crit)`)
 	name            = flag.String("name", "guard", "cron name in syslog")
 	errFileName     = flag.String("errfile", "/var/log/cronstatus", "error report file")
 	errFileQuiet    = flag.Bool("errfile-quiet", false, "hide timings in error report file")

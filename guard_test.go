@@ -65,6 +65,10 @@ func TestOutput(t *testing.T) {
 
 		// check err output
 		{"echo Hi there 1>&2", "errors while running guard.test\nHi there\nstderr is not empty\nexit status 0\n"},
+
+		// check asci boundaries
+		{"echo transferred", ""},
+		{"echo transferred error", "errors while running guard.test\ntransferred error\nbad keyword in command output\nexit status 0\n"},
 	}
 
 	var err error
