@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/robfig/cron"
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 
@@ -31,6 +32,7 @@ var (
 	errFileName     = flag.String("errfile", "/var/log/cronstatus", "error report file")
 	errFileQuiet    = flag.Bool("errfile-quiet", false, "hide timings in error report file")
 	errFileHideUUID = flag.Bool("errfile-no-uuid", false, "hide uuid in error report file")
+	quietTimes      = flag.String("quiet-times", "", "time ranges to ignore errors, format 'start(cron format):duration(golang duration):...")
 )
 
 func main() {
@@ -72,22 +74,18 @@ func main() {
 	}()
 	_, _, combined, exitCode, err := run(ctx, command, slog)
 
-	// handle good exit
-	if err == nil {
-		return
-	}
-
 	// handle bad exit
-	mixedlog := io.MultiWriter(elog, slog)
-	fmt.Fprintf(mixedlog, "errors while running %s\n", *name)
-	scanner := bufio.NewScanner(combined)
-	for scanner.Scan() {
-		line := scanner.Text()
-		fmt.Fprintf(elog, "%s\n", line)
+	if err != nil && !isQuiet() {
+		mixedlog := io.MultiWriter(elog, slog)
+		fmt.Fprintf(mixedlog, "errors while running %s\n", *name)
+		scanner := bufio.NewScanner(combined)
+		for scanner.Scan() {
+			line := scanner.Text()
+			fmt.Fprintf(elog, "%s\n", line)
+		}
+		fmt.Fprintf(mixedlog, "%s\n", err)
+		fmt.Fprintf(mixedlog, "exit status %d\n", exitCode)
 	}
-	fmt.Fprintf(mixedlog, "%s\n", err)
-	fmt.Fprintf(mixedlog, "exit status %d\n", exitCode)
-
 }
 
 func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buffer, stderr *bytes.Buffer, combined *bytes.Buffer, exitCode int, err error) {
@@ -146,6 +144,36 @@ func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buf
 		return
 	}
 	return
+}
+
+func isQuiet() bool {
+	if *quietTimes == "" {
+		return false
+	}
+	ts := strings.Split(*quietTimes, ":")
+	if len(ts)%2 != 0 {
+		log.Fatalf("Invalid times.")
+	}
+
+	for i := 0; i < len(ts); i += 2 {
+		startStr := ts[i]
+		durStr := ts[i+1]
+		now := time.Now()
+		shed, err := cron.Parse(startStr)
+		if err != nil {
+			log.Fatalf("Unable to parse cron time: %s", err)
+		}
+		dur, err := time.ParseDuration(durStr)
+		if err != nil {
+			log.Fatalf("Unable to parse cron time: %s", err)
+		}
+		start := shed.Next(now.Add(-dur))
+		end := start.Add(dur)
+		if now.After(start) && end.After(now) {
+			return true
+		}
+	}
+	return false
 }
 
 func parseLog(lock sync.Locker, r io.Reader, writers ...io.Writer) (err error) {

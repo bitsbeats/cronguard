@@ -13,9 +13,15 @@ type (
 		command string
 		content string
 	}
+
+	tQuietCase struct {
+		quiet   string
+		command string
+		content string
+	}
 )
 
-func cron(t *testing.T, command string, want string) (err error) {
+func guard(t *testing.T, quiet string, command string, want string) (err error) {
 	err = os.Remove("/tmp/goguardtest")
 	if err != nil && !os.IsNotExist(err) {
 		return
@@ -27,8 +33,11 @@ func cron(t *testing.T, command string, want string) (err error) {
 		"-errfile-quiet",
 		"-name", "test",
 		"-errfile", "/tmp/goguardtest",
-		command,
 	}
+	if quiet != "" {
+		os.Args = append(os.Args, "-quiet-times", quiet)
+	}
+	os.Args = append(os.Args, command)
 	main()
 
 	got, err := ioutil.ReadFile("/tmp/goguardtest")
@@ -49,6 +58,9 @@ func cron(t *testing.T, command string, want string) (err error) {
 }
 
 func TestOutput(t *testing.T) {
+	var err error
+
+	// test normal
 	cases := []tCase{
 		// check exit statuss
 		{"true", ""},
@@ -70,11 +82,23 @@ func TestOutput(t *testing.T) {
 		{"echo transferred", ""},
 		{"echo transferred error", "errors while running guard.test\ntransferred error\nbad keyword in command output\nexit status 0\n"},
 	}
-
-	var err error
 	for _, c := range cases {
-		err = cron(t, c.command, c.content)
+		err = guard(t, "", c.command, c.content)
 		if err != nil {
+			t.Error(err)
+			break
+		}
+	}
+
+	// test with quiet
+	qCases := []tQuietCase{
+		{"0 * * * *:1h", "false", ""},
+		{"0 0 * * *:0s", "false", "errors while running guard.test\nexit status 1\nexit status 1\n"},
+	}
+	for _, c := range qCases {
+		err = guard(t, c.quiet, c.command, c.content)
+		if err != nil {
+			t.Error(err)
 			break
 		}
 	}

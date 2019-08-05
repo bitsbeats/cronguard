@@ -5,7 +5,7 @@
 
 Simple wrapper log and handle cron errors.
 
-# Usage
+## Usage
 
 ```
   -errfile string
@@ -16,6 +16,8 @@ Simple wrapper log and handle cron errors.
     	hide timings in error report file
   -name string
     	cron name in syslog (default "cron")
+  -quiet-times string
+    	time ranges to ignore errors, format 'start(cron format):duration(golang duration):...
 ```
 
 Example:
@@ -26,7 +28,22 @@ cronguard -name cron.example "command"
 
 The command is executed with `bash -c`. You can use bash features like pipes.
 
-# Install
+### Quiet-Times
+
+Using quiet-times you can setup time-ranges where errors are ignores. Useful if there is a database backup and you want to disable to errors during the backup.
+
+Example:
+
+```sh
+cronguard -quiet-times "0 2 * * *:42m:0 5 * * *:20s" "echo hello world"
+```
+
+Here we ignore errors starting at 2:00 for 42minutes and starting at 05:00 for 20 seconds.
+
+Cron format documentation: https://godoc.org/github.com/robfig/cron#hdr-CRON_Expression_Format  
+Golang time duration documentation: https://golang.org/pkg/time/#ParseDuration
+
+## Install
 
 Via go:
 

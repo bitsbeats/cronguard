@@ -1,3 +1,7 @@
+# v0.4.1
+
+* add quiet times (a whitelist of times where errors are ignored)
+
 # v0.4.0
 
 * [BREAKING] require ascii word boundary on errorstring start
