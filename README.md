@@ -28,6 +28,8 @@ cronguard -name cron.example "command"
 
 The command is executed with `bash -c`. You can use bash features like pipes.
 
+**Note**: Bash is required.
+
 ### Quiet-Times
 
 Using quiet-times you can setup time-ranges where errors are ignores. Useful if there is a database backup and you want to disable to errors during the backup.
