@@ -7,9 +7,14 @@ steps:
     image: golang:alpine
     environment:
       CGO_ENABLED: 0
+      GOPROXY: https://proxy.golang.org
     commands:
-      - apk --no-cache add git
-      - go mod tidy
+      - apk --no-cache add syslog-ng bash
+      - syslogd
+      - ln -sf /var/run/log /var/run/syslog
+
+      - go mod download
+      - go test .
       - go build -o cronguard-linux-amd64 .
 
   - name: release

@@ -46,7 +46,6 @@ func main() {
 		log.Fatal("please supply the cron as a single argument")
 	}
 	command := flag.Arg(0)
-
 	UUID := xid.New()
 
 	// open syslog
@@ -78,10 +77,12 @@ func main() {
 	if err != nil && !isQuiet() {
 		mixedlog := io.MultiWriter(elog, slog)
 		fmt.Fprintf(mixedlog, "errors while running %s\n", *name)
-		scanner := bufio.NewScanner(combined)
-		for scanner.Scan() {
-			line := scanner.Text()
-			fmt.Fprintf(elog, "%s\n", line)
+		if combined != nil {
+			scanner := bufio.NewScanner(combined)
+			for scanner.Scan() {
+				line := scanner.Text()
+				fmt.Fprintf(elog, "%s\n", line)
+			}
 		}
 		fmt.Fprintf(mixedlog, "%s\n", err)
 		fmt.Fprintf(mixedlog, "exit status %d\n", exitCode)
@@ -106,9 +107,9 @@ func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buf
 	}
 
 	errgrp := errgroup.Group{}
-	stdout = bytes.NewBuffer(nil)
-	stderr = bytes.NewBuffer(nil)
-	combined = bytes.NewBuffer(nil)
+	stdout = bytes.NewBuffer([]byte{})
+	stderr = bytes.NewBuffer([]byte{})
+	combined = bytes.NewBuffer([]byte{})
 	lock := sync.Mutex{}
 	w := io.MultiWriter(combined, slog, stdout)
 

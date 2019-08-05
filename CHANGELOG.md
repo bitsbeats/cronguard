@@ -1,3 +1,7 @@
+# v0.4.2
+
+* fix nil pointer if bash is not availible
+
 # v0.4.1
 
 * add quiet times (a whitelist of times where errors are ignored)
