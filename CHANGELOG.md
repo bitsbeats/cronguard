@@ -1,3 +1,7 @@
+# v0.4.3
+
+* fix output
+
 # v0.4.2
 
 * fix nil pointer if bash is not availible
