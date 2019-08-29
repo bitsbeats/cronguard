@@ -15,7 +15,10 @@ steps:
 
       - go mod download
       - go test .
+      - GOARCH=386 go build -o cronguard-linux-386 .
       - go build -o cronguard-linux-amd64 .
+      - GOARCH=arm go build -o cronguard-linux-arm .
+      - GOARCH=arm64 go build -o cronguard-linux-arm64 .
 
   - name: release
     image: plugins/github-release
@@ -23,7 +26,10 @@ steps:
       api_key:
         from_secret: github_token
       files:
+        - cronguard-linux-386
         - cronguard-linux-amd64
+        - cronguard-linux-arm
+        - cronguard-linux-arm64
       checksum:
         - md5
         - sha1
