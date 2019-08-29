@@ -1,3 +1,6 @@
+# v0.4.4
+
+* more architectures (386, arm, arm64)
 # v0.4.3
 
 * fix output
