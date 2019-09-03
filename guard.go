@@ -166,7 +166,7 @@ func isQuiet() bool {
 		}
 		dur, err := time.ParseDuration(durStr)
 		if err != nil {
-			log.Fatalf("Unable to parse cron time: %s", err)
+			log.Fatalf("Unable to parse duration: %s", err)
 		}
 		start := shed.Next(now.Add(-dur))
 		end := start.Add(dur)
