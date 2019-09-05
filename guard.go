@@ -57,6 +57,9 @@ func main() {
 	regexFlag := f.String("regex", `(?im)\b(err|fail|crit)`, "regex for bad words")
 	f.Parse(os.Args[1:])
 	cr.Regex = regexp.MustCompile(*regexFlag)
+	if len(f.Args()) != 1 {
+		log.Fatalf("more than one command argument given: '%v'", f.Args())
+	}
 	cr.Command = f.Arg(0)
 
 	r := chained(runner, timeout, validateStdout, validateStderr, quietIgnore, headerize, combineLogs, insertUUID, writeSyslog, setupLogs)
