@@ -1,3 +1,7 @@
+# v0.6.2
+
+* validate argument length
+
 # v0.6.1
 
 * cleaner log format
