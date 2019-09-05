@@ -1,3 +1,8 @@
+# v0.6.0
+
+* rewrite to use middlewares
+* add lock support
+
 # v0.5.0
 
 * add timeout support
