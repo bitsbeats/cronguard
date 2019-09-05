@@ -33,6 +33,8 @@ var (
 	errFileQuiet    = flag.Bool("errfile-quiet", false, "hide timings in error report file")
 	errFileHideUUID = flag.Bool("errfile-no-uuid", false, "hide uuid in error report file")
 	quietTimes      = flag.String("quiet-times", "", "time ranges to ignore errors, format 'start(cron format):duration(golang duration):...")
+	timeout         = flag.Duration("timeout", 0, "timeout for the cron")
+	lockfile        = flag.String("lockfile", "", "lockfile to prevent the cron running twice")
 )
 
 func main() {
@@ -60,10 +62,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer errFile.Close()
 	elog := errlog.New(!*errFileHideUUID, UUID.String(), errFile)
 
-	// run
+	// mixlog
+	mixedlog := io.MultiWriter(elog, slog)
+
+	// cancelation + timeout
 	ctx, cancel := context.WithCancel(context.Background())
+	if *timeout > time.Duration(0) {
+		ctx, cancel = context.WithTimeout(context.Background(), *timeout)
+	}
 	defer cancel()
 	go func() {
 		sigs := make(chan os.Signal, 1)
@@ -71,11 +80,12 @@ func main() {
 		<-sigs
 		cancel()
 	}()
+
+	// run
 	_, _, combined, exitCode, err := run(ctx, command, slog)
 
 	// handle bad exit
 	if err != nil && !isQuiet() {
-		mixedlog := io.MultiWriter(elog, slog)
 		fmt.Fprintf(mixedlog, "errors while running %s\n", *name)
 		if combined != nil {
 			scanner := bufio.NewScanner(combined)
@@ -106,17 +116,18 @@ func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buf
 		return
 	}
 
-	errgrp := errgroup.Group{}
 	stdout = bytes.NewBuffer([]byte{})
 	stderr = bytes.NewBuffer([]byte{})
 	combined = bytes.NewBuffer([]byte{})
-	lock := sync.Mutex{}
 	w := io.MultiWriter(combined, slog, stdout)
 
 	if !*errFileQuiet {
 		start := time.Now()
-		fmt.Fprintf(w, "start: %s\n", start.Format(time.RFC3339))
 		fmt.Fprintf(w, "cmd: %s\n", flag.Arg(0))
+		fmt.Fprintf(w, "start: %s\n", start.Format(time.RFC3339))
+		if _, ok := ctx.Deadline(); ok {
+			fmt.Fprintf(w, "timeout: %s\n", timeout.String())
+		}
 		defer func() {
 			end := time.Now()
 			fmt.Fprintf(w, "end: %s\n", end.Format(time.RFC3339))
@@ -124,6 +135,8 @@ func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buf
 		}()
 	}
 
+	errgrp := errgroup.Group{}
+	lock := sync.Mutex{}
 	errgrp.Go(func() (err error) {
 		return parseLog(&lock, stdoutPipe, combined, slog, stdout)
 	})
@@ -131,13 +144,16 @@ func run(ctx context.Context, command string, slog io.Writer) (stdout *bytes.Buf
 		return parseLog(&lock, stderrPipe, combined, slog, stderr)
 	})
 
-	err = errgrp.Wait()
-	if err != nil {
-		return
-	}
 	err = cmd.Wait()
 	if err != nil {
 		exitCode = err.(*exec.ExitError).ExitCode()
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			err = ctxErr
+		}
+		return
+	}
+	err = errgrp.Wait()
+	if err != nil {
 		return
 	}
 	if stderr.Len() > 0 {
@@ -181,19 +197,23 @@ func parseLog(lock sync.Locker, r io.Reader, writers ...io.Writer) (err error) {
 	var nonCritErr error
 	w := io.MultiWriter(writers...)
 	scanner := bufio.NewScanner(r)
+
 	for scanner.Scan() {
-		lock.Lock()
-		line := append(scanner.Bytes(), '\n')
-
+		line := scanner.Bytes()
 		if nonCritErr == nil && !fine(line) {
-			nonCritErr = errors.New("bad keyword in command output")
+			nonCritErr = fmt.Errorf("bad keyword in command output: %s", line)
 		}
+		line = append(line, '\n')
 
-		_, err := w.Write(line)
+		lock.Lock()
+		_, err = w.Write(line)
 		lock.Unlock()
 		if err != nil {
 			return err
 		}
+	}
+	if err = scanner.Err(); err != nil {
+		return err
 	}
 	return nonCritErr
 }

@@ -68,19 +68,19 @@ func TestOutput(t *testing.T) {
 		{"exit 2", "errors while running guard.test\nexit status 2\nexit status 2\n"},
 
 		// check output
-		{"echo fail", "errors while running guard.test\nfail\nbad keyword in command output\nexit status 0\n"},
-		{"echo failure", "errors while running guard.test\nfailure\nbad keyword in command output\nexit status 0\n"},
-		{"echo ERR", "errors while running guard.test\nERR\nbad keyword in command output\nexit status 0\n"},
-		{"echo ERROR", "errors while running guard.test\nERROR\nbad keyword in command output\nexit status 0\n"},
-		{"echo Crit", "errors while running guard.test\nCrit\nbad keyword in command output\nexit status 0\n"},
-		{"echo Critical", "errors while running guard.test\nCritical\nbad keyword in command output\nexit status 0\n"},
+		{"echo fail", "errors while running guard.test\nfail\nbad keyword in command output: fail\nexit status 0\n"},
+		{"echo failure", "errors while running guard.test\nfailure\nbad keyword in command output: failure\nexit status 0\n"},
+		{"echo ERR", "errors while running guard.test\nERR\nbad keyword in command output: ERR\nexit status 0\n"},
+		{"echo ERROR", "errors while running guard.test\nERROR\nbad keyword in command output: ERROR\nexit status 0\n"},
+		{"echo Crit", "errors while running guard.test\nCrit\nbad keyword in command output: Crit\nexit status 0\n"},
+		{"echo Critical", "errors while running guard.test\nCritical\nbad keyword in command output: Critical\nexit status 0\n"},
 
 		// check err output
 		{"echo Hi there 1>&2", "errors while running guard.test\nHi there\nstderr is not empty\nexit status 0\n"},
 
 		// check asci boundaries
 		{"echo transferred", ""},
-		{"echo transferred error", "errors while running guard.test\ntransferred error\nbad keyword in command output\nexit status 0\n"},
+		{"echo transferred error", "errors while running guard.test\ntransferred error\nbad keyword in command output: transferred error\nexit status 0\n"},
 	}
 	for _, c := range cases {
 		err = guard(t, "", c.command, c.content)
