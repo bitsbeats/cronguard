@@ -20,7 +20,7 @@ func uuidPrefix(dest io.Writer, errGrp *errgroup.Group, UUID []byte) io.WriteClo
 			line := s.Bytes()
 			log := make([]byte, len(UUID)+len(line)+3)
 			pos := 0
-			for _, b := range [][]byte{UUID, []byte(": "), line, []byte("\n")} {
+			for _, b := range [][]byte{UUID, []byte(" "), line, []byte("\n")} {
 				pos += copy(log[pos:], b)
 			}
 			_, err = dest.Write(log)

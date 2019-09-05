@@ -93,20 +93,20 @@ func headerize(g GuardFunc) GuardFunc {
 		w := cr.Status.Combined
 		start := time.Now()
 		if !cr.ErrFileQuiet {
-			fmt.Fprintf(w, "start: %s\n", start.Format(time.RFC3339))
-			fmt.Fprintf(w, "cmd: %s\n", cr.Command)
-			fmt.Fprintf(w, "timeout: %s\n", cr.Timeout)
+			fmt.Fprintf(w, "// start: %s\n", start.Format(time.RFC3339))
+			fmt.Fprintf(w, "// cmd: %s\n", cr.Command)
+			fmt.Fprintf(w, "// timeout: %s\n", cr.Timeout)
 		}
 		err = g(ctx, cr)
 		end := time.Now()
 		if !cr.ErrFileQuiet {
-			fmt.Fprintf(w, "end: %s\n", end.Format(time.RFC3339))
-			fmt.Fprintf(w, "took: %s\n", end.Sub(start))
-			fmt.Fprintf(w, "exitcode: %d\n", cr.Status.ExitCode)
+			fmt.Fprintf(w, "// end: %s\n", end.Format(time.RFC3339))
+			fmt.Fprintf(w, "// took: %s\n", end.Sub(start))
+			fmt.Fprintf(w, "// exitcode: %d\n", cr.Status.ExitCode)
 		}
 		if err != nil {
 
-			fmt.Fprintf(w, "error: %s\n", err.Error())
+			fmt.Fprintf(w, "// error: %s\n", err.Error())
 		}
 		return err
 	}

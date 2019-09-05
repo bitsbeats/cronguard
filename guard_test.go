@@ -21,7 +21,7 @@ type (
 	}
 )
 
-func guard(t *testing.T, quiet string, command string, want string) (err error) {
+func guard(t *testing.T, additionalArgs []string, command string, want string) (err error) {
 	err = os.Remove("/tmp/goguardtest")
 	if err != nil && !os.IsNotExist(err) {
 		return
@@ -34,9 +34,7 @@ func guard(t *testing.T, quiet string, command string, want string) (err error) 
 		"-name", "test",
 		"-errfile", "/tmp/goguardtest",
 	}
-	if quiet != "" {
-		os.Args = append(os.Args, "-quiet-times", quiet)
-	}
+	os.Args = append(os.Args, additionalArgs...)
 	os.Args = append(os.Args, command)
 	main()
 
@@ -64,26 +62,26 @@ func TestOutput(t *testing.T) {
 	cases := []tCase{
 		// check exit statuss
 		{"true", ""},
-		{"false", "error: exit status 1\n"},
-		{"exit 2", "error: exit status 2\n"},
+		{"false", "// error: exit status 1\n"},
+		{"exit 2", "// error: exit status 2\n"},
 
 		// check output
-		{"echo fail", "fail\nerror: bad keyword in command output: fail\n"},
-		{"echo failure", "failure\nerror: bad keyword in command output: failure\n"},
-		{"echo ERR", "ERR\nerror: bad keyword in command output: ERR\n"},
-		{"echo ERROR", "ERROR\nerror: bad keyword in command output: ERROR\n"},
-		{"echo Crit", "Crit\nerror: bad keyword in command output: Crit\n"},
-		{"echo Critical", "Critical\nerror: bad keyword in command output: Critical\n"},
+		{"echo fail", "fail\n// error: bad keyword in command output: fail\n"},
+		{"echo failure", "failure\n// error: bad keyword in command output: failure\n"},
+		{"echo ERR", "ERR\n// error: bad keyword in command output: ERR\n"},
+		{"echo ERROR", "ERROR\n// error: bad keyword in command output: ERROR\n"},
+		{"echo Crit", "Crit\n// error: bad keyword in command output: Crit\n"},
+		{"echo Critical", "Critical\n// error: bad keyword in command output: Critical\n"},
 
 		// check err output
-		{"echo Hi there 1>&2", "Hi there\nerror: stderr is not empty\n"},
+		{"echo Hi there 1>&2", "Hi there\n// error: stderr is not empty\n"},
 
 		// check asci boundaries
 		{"echo transferred", ""},
-		{"echo transferred error", "transferred error\nerror: bad keyword in command output: transferred error\n"},
+		{"echo transferred error", "transferred error\n// error: bad keyword in command output: transferred error\n"},
 	}
 	for _, c := range cases {
-		err = guard(t, "", c.command, c.content)
+		err = guard(t, []string{}, c.command, c.content)
 		if err != nil {
 			t.Error(err)
 			break
@@ -93,10 +91,12 @@ func TestOutput(t *testing.T) {
 	// test with quiet
 	qCases := []tQuietCase{
 		{"0 * * * *:1h", "false", ""},
-		{"0 0 * * *:0s", "false", "error: exit status 1\n"},
+		{"0 0 * * *:0s", "false", "// error: exit status 1\n"},
 	}
+
+
 	for _, c := range qCases {
-		err = guard(t, c.quiet, c.command, c.content)
+		err = guard(t, []string{"-quiet-times", c.quiet}, c.command, c.content)
 		if err != nil {
 			t.Error(err)
 			break

@@ -1,3 +1,7 @@
+# v0.6.1
+
+* cleaner log format
+
 # v0.6.0
 
 * rewrite to use middlewares
