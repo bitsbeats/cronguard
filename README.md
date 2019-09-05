@@ -14,10 +14,16 @@ Simple wrapper log and handle cron errors.
     	hide uuid in error report file
   -errfile-quiet
     	hide timings in error report file
+  -lockfile string
+    	lockfile to prevent the cron running twice, set to enable
   -name string
     	cron name in syslog (default "cron")
   -quiet-times string
     	time ranges to ignore errors, format 'start(cron format):duration(golang duration):...
+  -regex string
+    	regex for bad words (default "(?im)\\b(err|fail|crit)")
+  -timeout duration
+    	timeout for the cron, set to enable
 ```
 
 Example:
