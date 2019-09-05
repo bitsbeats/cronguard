@@ -53,9 +53,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer slog.Close()
 
 	// errfile
-	defer slog.Close()
 	errFile, err := os.OpenFile(*errFileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		log.Fatal(err)
