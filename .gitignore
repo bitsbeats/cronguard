@@ -10,3 +10,10 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# project binaries
+cronguard
+cronguard-linux-386
+cronguard-linux-amd64
+cronguard-linux-arm
+cronguard-linux-arm64
