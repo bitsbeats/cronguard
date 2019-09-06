@@ -34,7 +34,10 @@ func setupLogs(g GuardFunc) GuardFunc {
 		err = g(ctx, cr)
 
 		if err != nil {
-			_, err = combined.WriteTo(errFile)
+			n, err := combined.WriteTo(errFile)
+			if n == 0 {
+				return fmt.Errorf("no output for err file")
+			}
 			if err != nil {
 				return fmt.Errorf("error while writing %s: %s", cr.ErrFile, err)
 			}
