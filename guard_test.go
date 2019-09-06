@@ -22,9 +22,9 @@ type (
 )
 
 func guard(t *testing.T, additionalArgs []string, command string, want string) (err error) {
-	err = os.Remove("/tmp/goguardtest")
-	if err != nil && !os.IsNotExist(err) {
-		return
+	tempFile, err := ioutil.TempFile("", "guard")
+	if err != nil {
+		t.Errorf("unable to create tmp file (%s): %s", tempFile.Name(), err)
 	}
 
 	os.Args = []string{
@@ -32,13 +32,13 @@ func guard(t *testing.T, additionalArgs []string, command string, want string) (
 		"-errfile-no-uuid",
 		"-errfile-quiet",
 		"-name", "test",
-		"-errfile", "/tmp/goguardtest",
+		"-errfile", tempFile.Name(),
 	}
 	os.Args = append(os.Args, additionalArgs...)
 	os.Args = append(os.Args, command)
 	main()
 
-	got, err := ioutil.ReadFile("/tmp/goguardtest")
+	got, err := ioutil.ReadAll(tempFile)
 	if err != nil {
 		return
 	}
@@ -47,7 +47,8 @@ func guard(t *testing.T, additionalArgs []string, command string, want string) (
 		t.Errorf("mismatch (-want +got):\n%s", diff)
 	}
 
-	err = os.Remove("/tmp/goguardtest")
+	tempFile.Close()
+	err = os.Remove(tempFile.Name())
 	if err != nil && !os.IsNotExist(err) {
 		return nil
 	}
