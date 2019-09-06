@@ -62,7 +62,7 @@ func main() {
 	}
 	cr.Command = f.Arg(0)
 
-	r := chained(runner, timeout, validateStdout, validateStderr, quietIgnore, headerize, combineLogs, insertUUID, writeSyslog, setupLogs)
+	r := chained(runner, timeout, validateStdout, validateStderr, quietIgnore, lockfile, headerize, combineLogs, insertUUID, writeSyslog, setupLogs)
 	err := r(context.Background(), &cr)
 	if err != nil {
 		log.Fatal(err)
