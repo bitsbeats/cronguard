@@ -18,7 +18,7 @@ func uuidPrefix(dest io.Writer, errGrp *errgroup.Group, UUID []byte) io.WriteClo
 	errGrp.Go(func() (err error) {
 		for s.Scan() {
 			line := s.Bytes()
-			log := make([]byte, len(UUID)+len(line)+3)
+			log := make([]byte, len(UUID)+len(line)+2)
 			pos := 0
 			for _, b := range [][]byte{UUID, []byte(" "), line, []byte("\n")} {
 				pos += copy(log[pos:], b)
