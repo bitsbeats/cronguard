@@ -55,7 +55,9 @@ func main() {
 	f.DurationVar(&cr.Timeout, "timeout", 0, "timeout for the cron, set to enable")
 	f.StringVar(&cr.Lockfile, "lockfile", "", "lockfile to prevent the cron running twice, set to enable")
 	regexFlag := f.String("regex", `(?im)\b(err|fail|crit)`, "regex for bad words")
-	f.Parse(os.Args[1:])
+	if err := f.Parse(os.Args[1:]); err != nil {
+		log.Fatal(err)
+	}
 	cr.Regex = regexp.MustCompile(*regexFlag)
 	if len(f.Args()) != 1 {
 		log.Fatalf("more than one command argument given: '%v'", f.Args())
