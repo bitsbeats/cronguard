@@ -83,33 +83,36 @@ func chained(final func() GuardFunc, middlewares ...func(GuardFunc) GuardFunc) (
 // runner executes the guarded command
 func runner() GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
+		// setup
 		cmd := exec.CommandContext(ctx, "bash", "-c", cr.Command)
-
-		// stdout
 		stdoutPipe, err := cmd.StdoutPipe()
 		if err != nil {
 			return
 		}
-		go func() {
-			_, _ = io.Copy(cr.Status.Stdout, stdoutPipe)
-			stdoutPipe.Close()
-		}()
-
-		// stderr
 		stderrPipe, err := cmd.StderrPipe()
 		if err != nil {
 			return
 		}
-		go func() {
-			_, _ = io.Copy(cr.Status.Stderr, stderrPipe)
-			stderrPipe.Close()
-		}()
 
+		// start
 		err = cmd.Start()
 		if err != nil {
 			return fmt.Errorf("unable to run command: %s", err)
 		}
 
+		// get ouput
+		sout, err := io.Copy(cr.Status.Stdout, stdoutPipe)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cr.Status.StdoutSize += sout
+		serr, err := io.Copy(cr.Status.Stderr, stderrPipe)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cr.Status.StderrSize += serr
+
+		// finish
 		err = cmd.Wait()
 		if err != nil {
 			cr.Status.ExitCode = err.(*exec.ExitError).ExitCode()
