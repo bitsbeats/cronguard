@@ -108,7 +108,6 @@ func headerize(g GuardFunc) GuardFunc {
 			fmt.Fprintf(w, "// exitcode: %d\n", cr.Status.ExitCode)
 		}
 		if err != nil {
-
 			fmt.Fprintf(w, "// error: %s\n", err.Error())
 		}
 		return err
@@ -207,11 +206,14 @@ func validateStdout(g GuardFunc) GuardFunc {
 		})
 
 		err = g(ctx, cr)
-		in.Close()
-
-		if err == nil {
-			err = errGrp.Wait()
+		if err != nil {
+			return
 		}
+		err = in.Close()
+		if err != nil {
+			return
+		}
+		err = errGrp.Wait()
 		return err
 	}
 }
