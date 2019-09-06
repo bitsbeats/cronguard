@@ -88,14 +88,20 @@ func runner() GuardFunc {
 		if err != nil {
 			return
 		}
-		go func() { _, _ = io.Copy(cr.Status.Stdout, stdoutPipe) }()
+		go func() {
+			_, _ = io.Copy(cr.Status.Stdout, stdoutPipe)
+			stdoutPipe.Close()
+		}()
 
 		// stderr
 		stderrPipe, err := cmd.StderrPipe()
 		if err != nil {
 			return
 		}
-		go func() { _, _ = io.Copy(cr.Status.Stderr, stderrPipe) }()
+		go func() {
+			_, _ = io.Copy(cr.Status.Stderr, stderrPipe)
+			stderrPipe.Close()
+		}()
 
 		err = cmd.Start()
 		if err != nil {
