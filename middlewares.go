@@ -70,8 +70,11 @@ func insertUUID(g GuardFunc) GuardFunc {
 		}
 		combined := uuidPrefix(cr.Status.Combined, &errGrp, UUID)
 		cr.Status.Combined = combined
-		err = g(ctx, cr)
-		if err != nil {
+		if err = g(ctx, cr); err != nil {
+			_ = combined.Close()
+			return err
+		}
+		if err = errGrp.Wait(); err != nil {
 			_ = combined.Close()
 			return err
 		}
@@ -98,7 +101,9 @@ func headerize(g GuardFunc) GuardFunc {
 		if !cr.ErrFileQuiet {
 			fmt.Fprintf(w, "// start: %s\n", start.Format(time.RFC3339))
 			fmt.Fprintf(w, "// cmd: %s\n", cr.Command)
-			fmt.Fprintf(w, "// timeout: %s\n", cr.Timeout)
+			if cr.Timeout > 0 {
+				fmt.Fprintf(w, "// timeout: %s\n", cr.Timeout)
+			}
 		}
 		err = g(ctx, cr)
 		end := time.Now()
@@ -198,7 +203,10 @@ func validateStdout(g GuardFunc) GuardFunc {
 		errGrp.Go(func() (err error) {
 			for s.Scan() {
 				line := s.Bytes()
-				if err == nil && cr.Regex.Match(line) {
+				if err = s.Err(); err != nil {
+					return err
+				}
+				if cr.Regex.Match(line) {
 					err = fmt.Errorf("bad keyword in command output: %s", line)
 				}
 			}
@@ -227,8 +235,10 @@ func timeout(g GuardFunc) GuardFunc {
 		}
 		defer cancel()
 		err = g(ctx, cr)
-		if err == nil {
-			err = ctx.Err()
+		if err != nil {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 		}
 		return err
 	}

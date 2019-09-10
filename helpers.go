@@ -48,11 +48,11 @@ func isQuiet(cr *CmdRequest) (bool, error) {
 		now := time.Now()
 		shed, err := cron.Parse(startStr)
 		if err != nil {
-			return false, fmt.Errorf("Unable to parse cron time: %s", err)
+			return false, fmt.Errorf("unable to parse cron time: %s", err)
 		}
 		dur, err := time.ParseDuration(durStr)
 		if err != nil {
-			return false, fmt.Errorf("Unable to parse duration: %s", err)
+			return false, fmt.Errorf("unable to parse duration: %s", err)
 		}
 		start := shed.Next(now.Add(-dur))
 		end := start.Add(dur)
