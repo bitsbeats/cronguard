@@ -143,15 +143,16 @@ func lockfile(g GuardFunc) GuardFunc {
 				return fmt.Errorf("unable to handle lockfile: %s", statErr)
 			}
 			pid := os.Getpid()
-			lockfile, err := os.Open(cr.Lockfile)
-			defer lockfile.Close()
+			lockfile, err := os.OpenFile(cr.Lockfile, os.O_CREATE|os.O_RDWR, 0600)
 			if err != nil {
 				return fmt.Errorf("unable to open lockfile: %s", err)
 			}
+			defer lockfile.Close()
 			_, err = fmt.Fprintf(lockfile, "%d", pid)
 			if err != nil {
 				return fmt.Errorf("unable to write lockfile: %s", err)
 			}
+			defer os.Remove(cr.Lockfile)
 		}
 		err = g(ctx, cr)
 		return err
