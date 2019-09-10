@@ -12,8 +12,8 @@ import (
 	"log/syslog"
 	"os"
 	"strconv"
-	"time"
 	"syscall"
+	"time"
 
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
