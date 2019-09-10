@@ -67,7 +67,7 @@ func main() {
 	r := chained(runner, timeout, validateStdout, validateStderr, quietIgnore, lockfile, headerize, combineLogs, insertUUID, writeSyslog, setupLogs)
 	err := r(context.Background(), &cr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("execution failed: %s", err)
 	}
 }
 
