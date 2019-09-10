@@ -75,8 +75,10 @@ func insertUUID(g GuardFunc) GuardFunc {
 			_ = combined.Close()
 			return err
 		}
+		if err = combined.Close(); err != nil {
+			return err
+		}
 		if err = errGrp.Wait(); err != nil {
-			_ = combined.Close()
 			return err
 		}
 		return combined.Close()
