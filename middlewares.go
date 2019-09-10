@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"syscall"
 
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
@@ -133,7 +134,11 @@ func lockfile(g GuardFunc) GuardFunc {
 				if err != nil {
 					return fmt.Errorf("unable to read pidfile: %s", err)
 				}
-				_, err = os.FindProcess(pid)
+				proc, err := os.FindProcess(pid)
+				if err != nil {
+					return fmt.Errorf("process(%d) from pidfile missing: %s", pid, err)
+				}
+				err = proc.Signal(syscall.Signal(0))
 				if err != nil {
 					return fmt.Errorf("process(%d) from pidfile missing: %s", pid, err)
 				}
