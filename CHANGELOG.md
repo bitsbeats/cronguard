@@ -1,3 +1,13 @@
+# v0.6.4
+
+* close uuid prefix before waiting for error
+
+# v0.6.3
+
+* add tests for new options
+* improve error handling
+* fix multiple issues (see commits)
+
 # v0.6.2
 
 * validate argument length
