@@ -12,15 +12,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func uuidPrefix(dest io.Writer, errGrp *errgroup.Group, UUID []byte) io.WriteCloser {
+func uuidPrefix(dest io.Writer, errGrp *errgroup.Group, uuid []byte) io.WriteCloser {
 	out, in := io.Pipe()
 	s := bufio.NewScanner(out)
 	errGrp.Go(func() (err error) {
 		for s.Scan() {
 			line := s.Bytes()
-			log := make([]byte, len(UUID)+len(line)+2)
+			log := make([]byte, len(uuid)+len(line)+2)
 			pos := 0
-			for _, b := range [][]byte{UUID, []byte(" "), line, []byte("\n")} {
+			for _, b := range [][]byte{uuid, []byte(" "), line, []byte("\n")} {
 				pos += copy(log[pos:], b)
 			}
 			_, err = dest.Write(log)
