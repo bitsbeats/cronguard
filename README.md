@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/bitsbeats/cronguard)](https://goreportcard.com/report/github.com/bitsbeats/cronguard)
 [![Build Status](https://cloud.drone.io/api/badges/bitsbeats/cronguard/status.svg)](https://cloud.drone.io/bitsbeats/cronguard)
 
-Simple wrapper log and handle cron errors.
+Simple wrapper to log and handle cron errors.
 
 ## Usage
 
@@ -38,7 +38,7 @@ The command is executed with `bash -c`. You can use bash features like pipes.
 
 ### Quiet-Times
 
-Using quiet-times you can setup time-ranges where errors are ignores. Useful if there is a database backup and you want to disable to errors during the backup.
+Using `-quiet-times` one can setup time ranges during which errors are ignored. Useful to disable error handling, for example, if there is a database backup running.
 
 Example:
 
@@ -46,7 +46,7 @@ Example:
 cronguard -quiet-times "0 2 * * *:42m:0 5 * * *:20s" "echo hello world"
 ```
 
-Here we ignore errors starting at 2:00 for 42minutes and starting at 05:00 for 20 seconds.
+This ignores errors starting at 2:00 for 42minutes and starting at 05:00 for 20 seconds.
 
 Cron format documentation: https://godoc.org/github.com/robfig/cron#hdr-CRON_Expression_Format  
 Golang time duration documentation: https://golang.org/pkg/time/#ParseDuration
