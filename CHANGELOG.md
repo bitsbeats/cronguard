@@ -1,3 +1,7 @@
+# v0.6.5
+
+* fix error-text in stdout with good lines afterwards
+
 # v0.6.4
 
 * close uuid prefix before waiting for error
