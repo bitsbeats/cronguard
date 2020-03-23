@@ -75,6 +75,7 @@ func TestOutput(t *testing.T) {
 		{"echo ERROR", []string{}, "ERROR\n// error: bad keyword in command output: ERROR\n"},
 		{"echo Crit", []string{}, "Crit\n// error: bad keyword in command output: Crit\n"},
 		{"echo Critical", []string{}, "Critical\n// error: bad keyword in command output: Critical\n"},
+		{`echo -e "err\ngood line\n"`, []string{}, "err\ngood line\n\n// error: bad keyword in command output: err\n"},
 
 		// check err output
 		{"echo Hi there 1>&2", []string{}, "Hi there\n// error: stderr is not empty\n"},
