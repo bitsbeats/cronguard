@@ -13,12 +13,11 @@ steps:
       - syslogd
       - ln -sf /var/run/log /var/run/syslog
 
-      - go mod download
-      - go test .
-      - GOARCH=386 go build -o cronguard-linux-386 .
-      - go build -o cronguard-linux-amd64 .
-      - GOARCH=arm go build -o cronguard-linux-arm .
-      - GOARCH=arm64 go build -o cronguard-linux-arm64 .
+      - go test -mod=vendor .
+      - GOARCH=386   go build -mod=vendor -o cronguard-linux-386 .
+      - GOARCH=amd64 go build -mod=vendor -o cronguard-linux-amd64 .
+      - GOARCH=arm   go build -mod=vendor -o cronguard-linux-arm .
+      - GOARCH=arm64 go build -mod=vendor -o cronguard-linux-arm64 .
 
   - name: release
     image: plugins/github-release
