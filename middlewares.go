@@ -211,8 +211,8 @@ func validateStdout(g GuardFunc) GuardFunc {
 		errGrp.Go(func() (err error) {
 			for s.Scan() {
 				line := s.Bytes()
-				if err = s.Err(); err != nil {
-					return err
+				if readErr := s.Err(); readErr != nil {
+					return readErr
 				}
 				if cr.Regex.Match(line) {
 					err = fmt.Errorf("bad keyword in command output: %s", line)
