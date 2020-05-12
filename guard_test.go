@@ -92,7 +92,8 @@ func TestOutput(t *testing.T) {
 		{"sleep 1", []string{"-timeout", "2s"}, ""},
 		{"sleep 2", []string{"-timeout", "500ms"}, "// error: context deadline exceeded\n"},
 	}
-	for _, c := range cases {
+	for i, c := range cases {
+		t.Logf("running case %d: %+v", i+1, c)
 		err = guard(t, c.additionalArgs, c.command, c.content)
 		if err != nil {
 			t.Error(err)
