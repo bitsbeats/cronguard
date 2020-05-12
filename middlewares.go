@@ -172,8 +172,11 @@ func lockfile(g GuardFunc) GuardFunc {
 func sentryHandler(g GuardFunc) GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
 		// check if envar is set
-		sentryDsn, ok := os.LookupEnv("CRONGUARD_SENTRY_DSN")
-		if !ok {
+		sentryDSN, ok := os.LookupEnv("CRONGUARD_SENTRY_DSN")
+		if !ok && cr.Config != nil {
+			sentryDSN = cr.Config.SentryDSN
+		}
+		if sentryDSN == "" {
 			return g(ctx, cr)
 		}
 
@@ -186,7 +189,7 @@ func sentryHandler(g GuardFunc) GuardFunc {
 
 		// prepare sentry
 		sentryErr := sentry.Init(sentry.ClientOptions{
-			Dsn:       sentryDsn,
+			Dsn:       sentryDSN,
 			Transport: sentry.NewHTTPSyncTransport(),
 		})
 		if sentryErr != nil {

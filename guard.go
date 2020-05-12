@@ -28,6 +28,8 @@ type (
 
 		Regex *regexp.Regexp
 
+		Config *Config
+
 		Status *CmdStatus
 	}
 
@@ -45,6 +47,7 @@ type (
 
 func main() {
 	cr := CmdRequest{}
+	cr.Config = ParseConfig()
 	cr.Status = &CmdStatus{}
 	f := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	f.StringVar(&cr.Name, "name", "guard", "cron name in syslog")

@@ -28,7 +28,7 @@ Simple wrapper to log and handle cron errors.
 
 Example:
 
-```
+```sh
 cronguard -name cron.example "command"
 ```
 
@@ -36,9 +36,24 @@ The command is executed with `bash -c`. You can use bash features like pipes.
 
 **Note**: Bash is required.
 
+### Sentry Support
+
+To enable sentry you can either create a `/etc/cronguard.yaml`, create `./cronguard.yaml` or use the environment
+variable `CRONGUARD_SENTRY_DSN`.
+
+If one of these is set cronguard will try to send events to sentry. If thats not possible it will fallback to default
+behavior.
+
+Config Example:
+
+```yaml
+sentry_dsn: https://00000000000000000000000000000000@sentry.example.com/2
+```
+
 ### Quiet-Times
 
-Using `-quiet-times` one can setup time ranges during which errors are ignored. Useful to disable error handling, for example, if there is a database backup running.
+Using `-quiet-times` one can setup time ranges during which errors are ignored. Useful to disable error handling,
+for example, if there is a database backup running.
 
 Example:
 
@@ -55,6 +70,6 @@ Golang time duration documentation: https://golang.org/pkg/time/#ParseDuration
 
 Via go:
 
-```
+```sh
 go get -u github.com/bitsbeats/cronguard
 ```
