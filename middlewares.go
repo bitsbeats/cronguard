@@ -216,8 +216,8 @@ func sentryHandler(g GuardFunc) GuardFunc {
 				hostname = "no-hostname"
 			}
 			cmd := cr.Command
-			if len(cmd) > 16 {
-				cmd = fmt.Sprintf("%s%s", cmd[0:14], "...")
+			if len(cmd) > 32 {
+				cmd = fmt.Sprintf("%s%s", cmd[0:30], "...")
 			}
 			name := fmt.Sprintf(
 				"%s (%s %s %s)",

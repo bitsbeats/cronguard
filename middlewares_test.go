@@ -82,7 +82,7 @@ func (s *Suite) TestSentryHandler(c *check.C) {
 		json.NewDecoder(r.Body).Decode(&payload)
 		message, ok := payload["message"].(string)
 		c.Assert(ok, check.Equals, true)
-		c.Assert(message, check.Matches, `echo running g\.\.\. \(.* 2bce22 problems\)`)
+		c.Assert(message, check.Matches, `echo running go tests \(.* 2bce22 problems\)`)
 	        extra, ok := payload["extra"].(map[string]interface{})
 		c.Assert(ok, check.Equals, true)
 	        command, ok := extra["command"].(string)
