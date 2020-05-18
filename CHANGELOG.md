@@ -1,3 +1,7 @@
+# v0.6.6
+
+* support for Sentry
+
 # v0.6.5
 
 * fix error-text in stdout with good lines afterwards
