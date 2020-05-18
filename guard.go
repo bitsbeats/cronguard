@@ -28,15 +28,17 @@ type (
 
 		Regex *regexp.Regexp
 
+		Config *Config
+
 		Status *CmdStatus
 	}
 
 	// CmdStatus is the commands status
 	CmdStatus struct {
-		Stdout   io.Writer
-		Stderr   io.Writer
-		Combined io.Writer
-		ExitCode int
+		Stdout   io.Writer // captures stdout
+		Stderr   io.Writer // captures stderr
+		Combined io.Writer // captures stdout and stderr
+		ExitCode int       // captures the exitcode
 	}
 
 	// GuardFunc is a middleware function
@@ -45,6 +47,7 @@ type (
 
 func main() {
 	cr := CmdRequest{}
+	cr.Config = ParseConfig()
 	cr.Status = &CmdStatus{}
 	f := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	f.StringVar(&cr.Name, "name", "guard", "cron name in syslog")
@@ -64,7 +67,11 @@ func main() {
 	}
 	cr.Command = f.Arg(0)
 
-	r := chained(runner, timeout, validateStdout, validateStderr, quietIgnore, lockfile, headerize, combineLogs, insertUUID, writeSyslog, setupLogs)
+	r := chained(
+		runner, timeout, validateStdout, validateStderr, quietIgnore,
+		sentryHandler, lockfile, headerize, combineLogs, insertUUID,
+		writeSyslog, setupLogs,
+	)
 	err := r(context.Background(), &cr)
 	if err != nil {
 		log.Fatalf("execution failed: %s", err)
@@ -94,7 +101,13 @@ func runner() GuardFunc {
 
 		err = cmd.Wait()
 		if err != nil {
-			cr.Status.ExitCode = err.(*exec.ExitError).ExitCode()
+			switch casted := err.(type) {
+			case *exec.ExitError:
+				cr.Status.ExitCode = casted.ExitCode()
+			default:
+				cr.Status.ExitCode = 1
+				err = fmt.Errorf("unable to execute command: %w", err)
+			}
 			return err
 		}
 		return err

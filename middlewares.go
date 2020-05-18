@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -12,9 +14,11 @@ import (
 	"log/syslog"
 	"os"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 )
@@ -166,6 +170,82 @@ func lockfile(g GuardFunc) GuardFunc {
 	}
 }
 
+func sentryHandler(g GuardFunc) GuardFunc {
+	return func(ctx context.Context, cr *CmdRequest) (err error) {
+		// check if envar is set
+		sentryDSN, ok := os.LookupEnv("CRONGUARD_SENTRY_DSN")
+		if !ok && cr.Config != nil {
+			sentryDSN = cr.Config.SentryDSN
+		}
+		if sentryDSN == "" {
+			return g(ctx, cr)
+		}
+
+		// wrap buffers
+		start := time.Now()
+		combined := bytes.NewBuffer([]byte{})
+		stderr := bytes.NewBuffer([]byte{})
+		cr.Status.Stderr = io.MultiWriter(stderr, combined, cr.Status.Stderr)
+		cr.Status.Stdout = io.MultiWriter(combined, cr.Status.Stdout)
+
+		// prepare sentry
+		sentryErr := sentry.Init(sentry.ClientOptions{
+			Dsn:       sentryDSN,
+			Transport: sentry.NewHTTPSyncTransport(),
+		})
+		if sentryErr != nil {
+			fmt.Fprintf(cr.Status.Stderr, "cronguard: unable to connect to sentry: %s\n", sentryErr)
+			fmt.Fprintf(cr.Status.Stderr, "cronguard: running cron anyways\n")
+		}
+
+		err = g(ctx, cr)
+
+		// try to log to sentry
+		if err != nil && sentryErr == nil {
+			// gather data
+			hostname, _ := os.Hostname()
+			if hostname == "" {
+				hostname = "no-hostname"
+			}
+			hostname = strings.SplitN(hostname, ".", 2)[0]
+			cmd := cr.Command
+			if len(cmd) > 32 {
+				cmd = fmt.Sprintf("%s%s", cmd[0:30], "...")
+			}
+			cmdHash := sha256.New()
+			cmdHash.Write([]byte(cr.Command))
+			cmdHash.Write([]byte(hostname))
+			hash := hex.EncodeToString(cmdHash.Sum(nil))
+
+			// add data to message
+			sentry.ConfigureScope(func(scope *sentry.Scope) {
+				scope.SetExtra("time_start", start)
+				scope.SetExtra("time_end", time.Now())
+				scope.SetExtra("time_duration", time.Since(start).String())
+				scope.SetExtra("out_combined", combined.String())
+				scope.SetExtra("out_stderr", stderr.String())
+				scope.SetExtra("command", cr.Command)
+				scope.SetFingerprint([]string{hash})
+			})
+			name := fmt.Sprintf(
+				"%s: %s (%s)",
+				hostname,
+				cmd,
+				err.Error(),
+			)
+			_ = sentry.CaptureMessage(name)
+
+			// hide error if messages are successfully flushed to sentry
+			flushed := sentry.Flush(30 * time.Second)
+			if flushed {
+				return nil
+			}
+		}
+		return err
+	}
+
+}
+
 // quietIgnore allows to ignore errors on lower settings if flag is set
 func quietIgnore(g GuardFunc) GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
@@ -208,17 +288,19 @@ func validateStdout(g GuardFunc) GuardFunc {
 
 		s := bufio.NewScanner(out)
 		errGrp := errgroup.Group{}
-		errGrp.Go(func() (err error) {
+		errGrp.Go(func() error {
+			var err error
 			for s.Scan() {
 				line := s.Bytes()
 				if readErr := s.Err(); readErr != nil {
 					return readErr
 				}
-				if cr.Regex.Match(line) {
+				match := cr.Regex.Match(line)
+				if match {
 					err = fmt.Errorf("bad keyword in command output: %s", line)
 				}
 			}
-			return
+			return err
 		})
 
 		err = g(ctx, cr)
