@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -67,25 +66,13 @@ func writeSyslog(g GuardFunc) GuardFunc {
 
 // insertUUID prefixes each line with a uuid unless errfile-no-uuid flag is set
 func insertUUID(g GuardFunc) GuardFunc {
-	errGrp := errgroup.Group{}
-	UUID := []byte(xid.New().String())
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
 		if cr.ErrFileHideUUID {
 			return g(ctx, cr)
 		}
-		combined := uuidPrefix(cr.Status.Combined, &errGrp, UUID)
+	        combined := newUUIDPrefixer(cr.Status.Combined)
 		cr.Status.Combined = combined
-		if err = g(ctx, cr); err != nil {
-			_ = combined.Close()
-			return err
-		}
-		if err = combined.Close(); err != nil {
-			return err
-		}
-		if err = errGrp.Wait(); err != nil {
-			return err
-		}
-		return combined.Close()
+		return g(ctx, cr)
 	}
 }
 

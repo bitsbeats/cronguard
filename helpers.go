@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -9,28 +9,45 @@ import (
 	"time"
 
 	"github.com/robfig/cron"
-	"golang.org/x/sync/errgroup"
+	"github.com/rs/xid"
 )
 
-func uuidPrefix(dest io.Writer, errGrp *errgroup.Group, uuid []byte) io.WriteCloser {
-	out, in := io.Pipe()
-	s := bufio.NewScanner(out)
-	errGrp.Go(func() (err error) {
-		for s.Scan() {
-			line := s.Bytes()
-			log := make([]byte, len(uuid)+len(line)+2)
-			pos := 0
-			for _, b := range [][]byte{uuid, []byte(" "), line, []byte("\n")} {
-				pos += copy(log[pos:], b)
-			}
-			_, err = dest.Write(log)
-			if err != nil {
-				return err
-			}
+// uuidPrefixer is a io.Writer that prefixes every line with UUID
+type uuidPrefixer struct {
+	uuid          []byte
+	writer        io.Writer
+	buf           *bytes.Buffer
+	lastIsNewline bool
+}
+
+// newUUIDPrefixer generates a new uuidPrefixer with an UUID
+func newUUIDPrefixer(dest io.Writer) *uuidPrefixer {
+	return &uuidPrefixer{
+		uuid:          []byte(xid.New().String() + " "),
+		writer:        dest,
+		buf:           bytes.NewBuffer(nil),
+		lastIsNewline: true,
+	}
+}
+
+// Write satisfies golang io.Writer
+func (prefixer *uuidPrefixer) Write(p []byte) (int, error) {
+	prefixer.buf.Reset()
+	for _, b := range p {
+		if prefixer.lastIsNewline {
+			prefixer.buf.Write(prefixer.uuid)
+			prefixer.lastIsNewline = false
 		}
-		return
-	})
-	return in
+		prefixer.buf.WriteByte(b)
+		if b == '\n' {
+			prefixer.lastIsNewline = true
+		}
+	}
+	n, err := prefixer.writer.Write(prefixer.buf.Bytes())
+	if n > len(p) {
+		n = len(p)
+	}
+	return n, err
 }
 
 func isQuiet(cr *CmdRequest) (bool, error) {
