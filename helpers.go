@@ -5,7 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/robfig/cron"
@@ -78,4 +82,38 @@ func isQuiet(cr *CmdRequest) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// handleLockfile validates the lockfile and checks if the command should be run
+func handleExistingLockfile(cr *CmdRequest) (bool, error) {
+	_, statErr := os.Stat(cr.Lockfile)
+	if statErr == nil {
+		pidBytes, err := ioutil.ReadFile(cr.Lockfile)
+		if err != nil {
+			return false, fmt.Errorf("unable to read lockfile: %s", err)
+		}
+		pid, err := strconv.Atoi(string(pidBytes))
+		if err != nil {
+			return false, fmt.Errorf("unable to read pidfile: %s", err)
+		}
+		proc, err := os.FindProcess(pid)
+		if err != nil {
+			return false, fmt.Errorf("process(%d) from pidfile missing: %s", pid, err)
+		}
+		err = proc.Signal(syscall.Signal(0))
+		if err == nil {
+			_, _ = fmt.Fprintf(cr.Status.Combined, "cron is still running, pid: %d", pid)
+			return false, nil
+		} else {
+			// if we have an orphaned pid, we try to report that to our reporter and continue
+			logErr := fmt.Errorf("process(%d) from pidfile missing: %s", pid, err)
+			if cr.Reporter != nil {
+				cr.Reporter.Info(logErr)
+			}
+			return true, nil
+		}
+	} else if !os.IsNotExist(statErr) {
+		return false, fmt.Errorf("unable to handle lockfile: %s", statErr)
+	}
+	return true, nil
 }

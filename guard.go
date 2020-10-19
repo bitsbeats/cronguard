@@ -31,6 +31,7 @@ type (
 		Config *Config
 
 		Status *CmdStatus
+		Reporter *Reporter
 	}
 
 	// CmdStatus is the commands status
@@ -69,7 +70,7 @@ func main() {
 
 	r := chained(
 		runner, timeout, validateStdout, validateStderr, quietIgnore,
-		sentryHandler, lockfile, headerize, combineLogs, insertUUID,
+		lockfile, sentryHandler, headerize, combineLogs, insertUUID,
 		writeSyslog, setupLogs,
 	)
 	err := r(context.Background(), &cr)

@@ -4,21 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"log/syslog"
 	"os"
-	"strconv"
-	"strings"
-	"syscall"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -70,7 +63,7 @@ func insertUUID(g GuardFunc) GuardFunc {
 		if cr.ErrFileHideUUID {
 			return g(ctx, cr)
 		}
-	        combined := newUUIDPrefixer(cr.Status.Combined)
+		combined := newUUIDPrefixer(cr.Status.Combined)
 		cr.Status.Combined = combined
 		return g(ctx, cr)
 	}
@@ -117,31 +110,16 @@ func headerize(g GuardFunc) GuardFunc {
 func lockfile(g GuardFunc) GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
 		if cr.Lockfile != "" {
-			_, statErr := os.Stat(cr.Lockfile)
-			if statErr == nil {
-				pidBytes, err := ioutil.ReadFile(cr.Lockfile)
-				if err != nil {
-					return fmt.Errorf("unable to read lockfile: %s", err)
-				}
-				pid, err := strconv.Atoi(string(pidBytes))
-				if err != nil {
-					return fmt.Errorf("unable to read pidfile: %s", err)
-				}
-				proc, err := os.FindProcess(pid)
-				if err != nil {
-					return fmt.Errorf("process(%d) from pidfile missing: %s", pid, err)
-				}
-				err = proc.Signal(syscall.Signal(0))
-				if err != nil {
-					return fmt.Errorf("process(%d) from pidfile missing: %s", pid, err)
-				}
-				_, _ = fmt.Fprintf(cr.Status.Combined, "cron is still running, pid: %d", pid)
-				return nil
-			} else if !os.IsNotExist(statErr) {
-				return fmt.Errorf("unable to handle lockfile: %s", statErr)
+			run, err := handleExistingLockfile(cr)
+			if err != nil {
+				return err
 			}
+			if !run {
+				return nil
+			}
+
 			pid := os.Getpid()
-			lockfile, err := os.OpenFile(cr.Lockfile, os.O_CREATE|os.O_RDWR, 0600)
+			lockfile, err := os.OpenFile(cr.Lockfile, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0600)
 			if err != nil {
 				return fmt.Errorf("unable to open lockfile: %s", err)
 			}
@@ -157,80 +135,18 @@ func lockfile(g GuardFunc) GuardFunc {
 	}
 }
 
+// sentryHandler redirects all errors to a sentry if configured
 func sentryHandler(g GuardFunc) GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
-		// check if envar is set
-		sentryDSN, ok := os.LookupEnv("CRONGUARD_SENTRY_DSN")
-		if !ok && cr.Config != nil {
-			sentryDSN = cr.Config.SentryDSN
-		}
-		if sentryDSN == "" {
+		reporter, reporterErr := newReporter(cr)
+		if reporterErr != nil {
 			return g(ctx, cr)
 		}
 
-		// wrap buffers
-		start := time.Now()
-		combined := bytes.NewBuffer([]byte{})
-		stderr := bytes.NewBuffer([]byte{})
-		cr.Status.Stderr = io.MultiWriter(stderr, combined, cr.Status.Stderr)
-		cr.Status.Stdout = io.MultiWriter(combined, cr.Status.Stdout)
-
-		// prepare sentry
-		sentryErr := sentry.Init(sentry.ClientOptions{
-			Dsn:       sentryDSN,
-			Transport: sentry.NewHTTPSyncTransport(),
-		})
-		if sentryErr != nil {
-			fmt.Fprintf(cr.Status.Stderr, "cronguard: unable to connect to sentry: %s\n", sentryErr)
-			fmt.Fprintf(cr.Status.Stderr, "cronguard: running cron anyways\n")
-		}
-
+		cr.Reporter = reporter
 		err = g(ctx, cr)
-
-		// try to log to sentry
-		if err != nil && sentryErr == nil {
-			// gather data
-			hostname, _ := os.Hostname()
-			if hostname == "" {
-				hostname = "no-hostname"
-			}
-			hostname = strings.SplitN(hostname, ".", 2)[0]
-			cmd := cr.Command
-			if len(cmd) > 32 {
-				cmd = fmt.Sprintf("%s%s", cmd[0:30], "...")
-			}
-			cmdHash := sha256.New()
-			cmdHash.Write([]byte(cr.Command))
-			cmdHash.Write([]byte(hostname))
-			hash := hex.EncodeToString(cmdHash.Sum(nil))
-
-			// add data to message
-			sentry.ConfigureScope(func(scope *sentry.Scope) {
-				scope.SetExtra("time_start", start)
-				scope.SetExtra("time_end", time.Now())
-				scope.SetExtra("time_duration", time.Since(start).String())
-				scope.SetExtra("out_combined", combined.String())
-				scope.SetExtra("out_stderr", stderr.String())
-				scope.SetExtra("command", cr.Command)
-				scope.SetFingerprint([]string{hash})
-			})
-			name := fmt.Sprintf(
-				"%s: %s (%s)",
-				hostname,
-				cmd,
-				err.Error(),
-			)
-			_ = sentry.CaptureMessage(name)
-
-			// hide error if messages are successfully flushed to sentry
-			flushed := sentry.Flush(30 * time.Second)
-			if flushed {
-				return nil
-			}
-		}
-		return err
+		return reporter.Finish(err)
 	}
-
 }
 
 // quietIgnore allows to ignore errors on lower settings if flag is set
