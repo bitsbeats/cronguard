@@ -1,6 +1,9 @@
-# github.com/getsentry/sentry-go v0.5.1
+# github.com/getsentry/sentry-go v0.11.0
 github.com/getsentry/sentry-go
-# github.com/google/go-cmp v0.4.0
+github.com/getsentry/sentry-go/internal/crypto/randutil
+github.com/getsentry/sentry-go/internal/debug
+github.com/getsentry/sentry-go/internal/ratelimit
+# github.com/google/go-cmp v0.5.5
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
@@ -10,7 +13,7 @@ github.com/google/go-cmp/cmp/internal/value
 github.com/robfig/cron
 # github.com/rs/xid v1.2.1
 github.com/rs/xid
-# golang.org/x/sync v0.0.0-20190423024810-112230192c58
+# golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 golang.org/x/sync/errgroup
 # gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
 gopkg.in/check.v1
