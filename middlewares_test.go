@@ -83,12 +83,12 @@ func (s *Suite) TestSentryHandler(c *check.C) {
 		message, ok := payload["message"].(string)
 		c.Assert(ok, check.Equals, true)
 		c.Assert(message, check.Matches, `.*: echo running go tests \(problems\)`)
-	        extra, ok := payload["extra"].(map[string]interface{})
+		extra, ok := payload["extra"].(map[string]interface{})
 		c.Assert(ok, check.Equals, true)
-	        command, ok := extra["command"].(string)
+		command, ok := extra["command"].(string)
 		c.Assert(ok, check.Equals, true)
 		c.Assert(command, check.Equals, "echo running go tests")
-	        out_combined, ok := extra["out_combined"].(string)
+		out_combined, ok := extra["out_combined"].(string)
 		c.Assert(ok, check.Equals, true)
 		c.Assert(out_combined, check.Equals, "hi")
 	})
@@ -97,7 +97,7 @@ func (s *Suite) TestSentryHandler(c *check.C) {
 	// enabled working
 	os.Setenv("CRONGUARD_SENTRY_DSN", fmt.Sprintf("http://testuser@%s/1", server.Listener.Addr().String()))
 	mockCases = newMockCases()
-	for _, cse := range mockCases[0:3]{
+	for _, cse := range mockCases[0:3] {
 		cse.validate(c, sentryHandler)
 	}
 	mockCases[4].validate(c, sentryHandler, mockNoError{})
@@ -105,7 +105,7 @@ func (s *Suite) TestSentryHandler(c *check.C) {
 	// enabled broken
 	os.Setenv("CRONGUARD_SENTRY_DSN", fmt.Sprintf("http://%s/2", server.Listener.Addr().String()))
 	mockCases = newMockCases()
-	for _, cse := range mockCases{
+	for _, cse := range mockCases {
 		cse.validate(c, sentryHandler, mockStderrCheck(&check.Matches), mockStderr("(?s).*empty username.*"))
 	}
 }
