@@ -1,3 +1,15 @@
+# v0.6.9
+
+* fix handling of Sentry timeouts
+
+# v0.6.8
+
+* support for Sentry Info messages
+
+# v0.6.7
+
+* fix uuidPrefix that could drop lines
+
 # v0.6.6
 
 * support for Sentry
