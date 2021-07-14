@@ -3,15 +3,16 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http/httptest"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"regexp"
 	"testing"
-	"encoding/json"
+	"time"
 
 	"gopkg.in/check.v1"
 )
@@ -92,6 +93,10 @@ func (s *Suite) TestSentryHandler(c *check.C) {
 		c.Assert(ok, check.Equals, true)
 		c.Assert(out_combined, check.Equals, "hi")
 	})
+	mux.HandleFunc("/api/3/store/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(os.Stdout, "called")
+		<-time.After(35 * time.Second)
+	})
 	server := httptest.NewServer(mux)
 
 	// enabled working
@@ -108,6 +113,16 @@ func (s *Suite) TestSentryHandler(c *check.C) {
 	for _, cse := range mockCases {
 		cse.validate(c, sentryHandler, mockStderrCheck(&check.Matches), mockStderr("(?s).*empty username.*"))
 	}
+
+	// timeout
+	os.Setenv("CRONGUARD_SENTRY_DSN", fmt.Sprintf("http://testuser@%s/3", server.Listener.Addr().String()))
+	SentryTimeout = 2 * time.Second
+	mockCases = newMockCases()
+	mockCases[0].validate(c, sentryHandler)
+	mockCases[1].validate(c, sentryHandler)
+	mockCases[2].validate(c, sentryHandler)
+	mockCases[3].validate(c, sentryHandler)
+	mockCases[4].validate(c, sentryHandler)
 }
 
 func (s *Suite) TestQuietIgnore(c *check.C) {
