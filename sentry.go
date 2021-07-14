@@ -27,6 +27,8 @@ type (
 	}
 )
 
+var SentryTimeout = 30 * time.Second
+
 // newReporter creates a new Sentry client
 func newReporter(cr *CmdRequest) (*Reporter, error) {
 	sentryDSN, ok := os.LookupEnv("CRONGUARD_SENTRY_DSN")
@@ -53,8 +55,7 @@ func newReporter(cr *CmdRequest) (*Reporter, error) {
 
 	// setup sentry
 	sentryErr := sentry.Init(sentry.ClientOptions{
-		Dsn:       sentryDSN,
-		Transport: sentry.NewHTTPSyncTransport(),
+		Dsn: sentryDSN,
 	})
 	if sentryErr != nil {
 		fmt.Fprintf(cr.Status.Stderr, "cronguard: unable to connect to sentry: %s\n", sentryErr)
@@ -104,9 +105,9 @@ type reportLevel = string
 
 const (
 	// infoLevel is an information that will be send to sentry
-	infoLevel   reportLevel = "info"
+	infoLevel reportLevel = "info"
 	// finishLevel is used to tell the reporter that the cron has finished
-	finishLevel             = "finish"
+	finishLevel = "finish"
 )
 
 // report reports any error message to sentry
@@ -133,7 +134,7 @@ func (r *Reporter) report(err error, level reportLevel) error {
 	_ = sentry.CaptureMessage(name)
 
 	// hide error if messages are successfully flushed to sentry
-	flushed := sentry.Flush(30 * time.Second)
+	flushed := sentry.Flush(SentryTimeout)
 	if !flushed {
 		return err
 	}
