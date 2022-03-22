@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	stdlog "log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/rs/zerolog/log"
 )
 
 type (

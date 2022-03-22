@@ -5,11 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
+	stdlog "log"
 	"os"
 	"os/exec"
 	"regexp"
 	"time"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -17,6 +20,7 @@ type (
 	CmdRequest struct {
 		Name    string
 		Command string
+		Debug   bool
 
 		ErrFile         string
 		ErrFileQuiet    bool
@@ -30,7 +34,7 @@ type (
 
 		Config *Config
 
-		Status *CmdStatus
+		Status   *CmdStatus
 		Reporter *Reporter
 	}
 
@@ -47,6 +51,19 @@ type (
 )
 
 func main() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:        os.Stderr,
+		TimeFormat: zerolog.TimeFormatUnix,
+	})
+	stdlog.SetFlags(0)
+	stdlog.Default().SetOutput(
+		log.Logger.
+			Level(zerolog.DebugLevel).
+			With().
+			Str("logger", "stdlog").
+			Logger(),
+	)
+
 	cr := CmdRequest{}
 	cr.Config = ParseConfig()
 	cr.Status = &CmdStatus{}
@@ -58,14 +75,20 @@ func main() {
 	f.StringVar(&cr.QuietTimes, "quiet-times", "", "time ranges to ignore errors, format 'start(cron format):duration(golang duration):...")
 	f.DurationVar(&cr.Timeout, "timeout", 0, "timeout for the cron, set to enable")
 	f.StringVar(&cr.Lockfile, "lockfile", "", "lockfile to prevent the cron running twice, set to enable")
+	f.BoolVar(&cr.Debug, "debug", false, "enable debugging")
 	regexFlag := f.String("regex", `(?im)\b(err|fail|crit)`, "regex for bad words")
 	if err := f.Parse(os.Args[1:]); err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("unable to parse arguments")
 	}
 	cr.Regex = regexp.MustCompile(*regexFlag)
 	if len(f.Args()) != 1 {
-		log.Fatalf("more than one command argument given: '%v'", f.Args())
+		log.Fatal().Msgf("more than one command argument given: '%v'", f.Args())
 	}
+
+	if !cr.Debug {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+
 	cr.Command = f.Arg(0)
 
 	r := chained(
@@ -75,7 +98,7 @@ func main() {
 	)
 	err := r(context.Background(), &cr)
 	if err != nil {
-		log.Fatalf("execution failed: %s", err)
+		log.Fatal().Err(err).Msg("execution failed")
 	}
 }
 
@@ -101,6 +124,8 @@ func runner() GuardFunc {
 		}
 
 		err = cmd.Wait()
+		log.Debug().Err(err).Msg("executed in runner")
+
 		if err != nil {
 			switch casted := err.(type) {
 			case *exec.ExitError:

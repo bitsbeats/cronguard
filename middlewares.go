@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"log/syslog"
 	"os"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -24,11 +24,12 @@ func setupLogs(g GuardFunc) GuardFunc {
 		cr.Status.Stderr = bytes.NewBuffer([]byte{})
 		errFile, errFileErr := os.OpenFile(cr.ErrFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 		if errFileErr != nil {
-			log.Fatalf("error while opening %s: %s", cr.ErrFile, errFileErr)
+			log.Fatal().Err(errFileErr).Str("file", cr.ErrFile).Msg("error opening")
 		}
 		defer errFile.Close()
 
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in setupLogs")
 
 		if err != nil {
 			n, err := combined.WriteTo(errFile)
@@ -48,11 +49,12 @@ func writeSyslog(g GuardFunc) GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
 		slog, err := syslog.New(syslog.LOG_INFO|syslog.LOG_CRON, cr.Name)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Msg("unable to open syslog")
 		}
 		defer slog.Close()
 		cr.Status.Combined = io.MultiWriter(slog, cr.Status.Combined)
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in writeSyslog")
 		return err
 	}
 }
@@ -65,7 +67,9 @@ func insertUUID(g GuardFunc) GuardFunc {
 		}
 		combined := newUUIDPrefixer(cr.Status.Combined)
 		cr.Status.Combined = combined
-		return g(ctx, cr)
+		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in insertUUID")
+		return err
 	}
 }
 
@@ -76,6 +80,7 @@ func combineLogs(g GuardFunc) GuardFunc {
 		cr.Status.Stdout = io.MultiWriter(cr.Status.Stdout, combined)
 		cr.Status.Stderr = io.MultiWriter(cr.Status.Stderr, combined)
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in combineLogs")
 		return err
 	}
 }
@@ -92,7 +97,10 @@ func headerize(g GuardFunc) GuardFunc {
 				fmt.Fprintf(w, "// timeout: %s\n", cr.Timeout)
 			}
 		}
+
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in headerize")
+
 		end := time.Now()
 		if !cr.ErrFileQuiet {
 			fmt.Fprintf(w, "// end: %s\n", end.Format(time.RFC3339))
@@ -130,7 +138,10 @@ func lockfile(g GuardFunc) GuardFunc {
 			}
 			defer os.Remove(cr.Lockfile)
 		}
+
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in lockfile")
+
 		return err
 	}
 }
@@ -144,7 +155,10 @@ func sentryHandler(g GuardFunc) GuardFunc {
 		}
 
 		cr.Reporter = reporter
+
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in sentryHandler")
+
 		return reporter.Finish(err)
 	}
 }
@@ -154,9 +168,12 @@ func quietIgnore(g GuardFunc) GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
 		quiet, err := isQuiet(cr)
 		if err != nil {
-			log.Fatalf("quiet-times issue: %s", err)
+			log.Fatal().Err(err).Msg("quiet-time malformed")
 		}
+
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in quietIgnore")
+
 		if quiet {
 			return nil
 		}
@@ -171,7 +188,10 @@ func validateStderr(g GuardFunc) GuardFunc {
 		stderr := cr.Status.Stderr
 		wc := NewWriteCounter(stderr)
 		cr.Status.Stderr = wc
+
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in validateStderr")
+
 		if err != nil {
 			return err
 		}
@@ -207,6 +227,8 @@ func validateStdout(g GuardFunc) GuardFunc {
 		})
 
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in validateStdout")
+
 		if err != nil {
 			return
 		}
@@ -227,7 +249,10 @@ func timeout(g GuardFunc) GuardFunc {
 			ctx, cancel = context.WithTimeout(context.Background(), cr.Timeout)
 		}
 		defer cancel()
+
 		err = g(ctx, cr)
+		log.Debug().Err(err).Msg("executed in timeout")
+
 		if err != nil {
 			if err := ctx.Err(); err != nil {
 				return err
