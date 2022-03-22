@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"hash"
 	"io"
 	stdlog "log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -56,7 +58,18 @@ func newReporter(cr *CmdRequest) (*Reporter, error) {
 	}
 
 	// setup sentry
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
 	sentryErr := sentry.Init(sentry.ClientOptions{
+		Debug:         true,
+		HTTPTransport: transport,
+		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+			log.Debug().Interface("event", event).Msg("sending event")
+			return event
+		},
 		Dsn: sentryDSN,
 	})
 	if sentryErr != nil {
@@ -77,6 +90,9 @@ func newReporter(cr *CmdRequest) (*Reporter, error) {
 		scope.SetExtra("time_start", start)
 		scope.SetExtra("command", cr.Command)
 	})
+
+
+	sentry.Logger = stdlog.Default()
 
 	return &Reporter{
 		sentryDSN: sentryDSN,
