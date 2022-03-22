@@ -124,7 +124,7 @@ func runner() GuardFunc {
 		}
 
 		err = cmd.Wait()
-		log.Debug().Err(err).Msg("executed in runner")
+		log.Debug().Err(err).Str("middleware", "runner").Msg("executed")
 
 		if err != nil {
 			switch casted := err.(type) {

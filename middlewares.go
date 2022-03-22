@@ -29,7 +29,7 @@ func setupLogs(g GuardFunc) GuardFunc {
 		defer errFile.Close()
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in setupLogs")
+		log.Debug().Err(err).Str("middleware", "setupLogs").Msg("executed")
 
 		if err != nil {
 			n, err := combined.WriteTo(errFile)
@@ -54,7 +54,7 @@ func writeSyslog(g GuardFunc) GuardFunc {
 		defer slog.Close()
 		cr.Status.Combined = io.MultiWriter(slog, cr.Status.Combined)
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in writeSyslog")
+		log.Debug().Err(err).Str("middleware", "writeSyslog").Msg("executed")
 		return err
 	}
 }
@@ -68,7 +68,7 @@ func insertUUID(g GuardFunc) GuardFunc {
 		combined := newUUIDPrefixer(cr.Status.Combined)
 		cr.Status.Combined = combined
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in insertUUID")
+		log.Debug().Err(err).Str("middleware", "insertUUID").Msg("executed")
 		return err
 	}
 }
@@ -80,7 +80,7 @@ func combineLogs(g GuardFunc) GuardFunc {
 		cr.Status.Stdout = io.MultiWriter(cr.Status.Stdout, combined)
 		cr.Status.Stderr = io.MultiWriter(cr.Status.Stderr, combined)
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in combineLogs")
+		log.Debug().Err(err).Str("middleware", "combineLogs").Msg("executed")
 		return err
 	}
 }
@@ -99,7 +99,7 @@ func headerize(g GuardFunc) GuardFunc {
 		}
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in headerize")
+		log.Debug().Err(err).Str("middleware", "headerize").Msg("executed")
 
 		end := time.Now()
 		if !cr.ErrFileQuiet {
@@ -140,7 +140,7 @@ func lockfile(g GuardFunc) GuardFunc {
 		}
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in lockfile")
+		log.Debug().Err(err).Str("middleware", "lockfile").Msg("executed")
 
 		return err
 	}
@@ -151,13 +151,14 @@ func sentryHandler(g GuardFunc) GuardFunc {
 	return func(ctx context.Context, cr *CmdRequest) (err error) {
 		reporter, reporterErr := newReporter(cr)
 		if reporterErr != nil {
+			log.Debug().Err(reporterErr).Msg("sentry is disabled")
 			return g(ctx, cr)
 		}
 
 		cr.Reporter = reporter
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in sentryHandler")
+		log.Debug().Err(err).Str("middleware", "sentryHandler").Msg("executed")
 
 		return reporter.Finish(err)
 	}
@@ -172,7 +173,7 @@ func quietIgnore(g GuardFunc) GuardFunc {
 		}
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in quietIgnore")
+		log.Debug().Err(err).Str("middleware", "quietIgnore").Msg("executed")
 
 		if quiet {
 			return nil
@@ -190,7 +191,7 @@ func validateStderr(g GuardFunc) GuardFunc {
 		cr.Status.Stderr = wc
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in validateStderr")
+		log.Debug().Err(err).Str("middleware", "validateStderr").Msg("executed")
 
 		if err != nil {
 			return err
@@ -227,7 +228,7 @@ func validateStdout(g GuardFunc) GuardFunc {
 		})
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in validateStdout")
+		log.Debug().Err(err).Str("middleware", "validateStdout").Msg("executed")
 
 		if err != nil {
 			return
@@ -251,7 +252,7 @@ func timeout(g GuardFunc) GuardFunc {
 		defer cancel()
 
 		err = g(ctx, cr)
-		log.Debug().Err(err).Msg("executed in timeout")
+		log.Debug().Err(err).Str("middleware", "timeout").Msg("executed")
 
 		if err != nil {
 			if err := ctx.Err(); err != nil {
