@@ -4,7 +4,7 @@ name: default
 steps:
 
   - name: build
-    image: golang:alpine
+    image: golang:1.17-alpine
     environment:
       CGO_ENABLED: 0
       GOPROXY: https://proxy.golang.org
