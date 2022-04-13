@@ -64,7 +64,7 @@ func newReporter(cr *CmdRequest) (*Reporter, error) {
 		},
 	}
 	sentryErr := sentry.Init(sentry.ClientOptions{
-		Debug:         true,
+		Debug:         cr.Debug,
 		HTTPTransport: transport,
 		BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
 			log.Debug().Interface("event", event).Msg("sending event")
@@ -90,7 +90,6 @@ func newReporter(cr *CmdRequest) (*Reporter, error) {
 		scope.SetExtra("time_start", start)
 		scope.SetExtra("command", cr.Command)
 	})
-
 
 	sentry.Logger = stdlog.Default()
 
