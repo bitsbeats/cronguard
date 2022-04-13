@@ -91,7 +91,9 @@ func newReporter(cr *CmdRequest) (*Reporter, error) {
 		scope.SetExtra("command", cr.Command)
 	})
 
-	sentry.Logger = stdlog.Default()
+	if cr.Debug {
+		sentry.Logger = stdlog.Default()
+	}
 
 	return &Reporter{
 		sentryDSN: sentryDSN,
